@@ -1,1 +1,1 @@
-# Trafik-Cezalar-Kay-t-Otomasyon-Sistemi
+# Trafik-Cezasi-Kayit-Otomasyon-Sistemi
