@@ -116,7 +116,7 @@ $kayitlar = $db->query($liste_sorgusu);
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-<div class="container mt-5">
+<div class="container-fluid px-4 mt-4">
     
     <div class="dash-header">
         <h5>Hoşgeldin, <?= htmlspecialchars($_SESSION['kullanici_adi']) ?> <span class="badge bg-primary ms-2"><?= htmlspecialchars(strtoupper($rol)) ?></span></h5>
@@ -222,37 +222,39 @@ $kayitlar = $db->query($liste_sorgusu);
                 <h5 class="mb-4" style="font-weight: 600; color: var(--dark);">📋 Ceza Kayıtları Listesi</h5>
                 <div class="table-container shadow-sm border">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
                             <thead>
                                 <tr>
-                                    <?php if($rol == 'komiser') echo "<th>Personel</th>"; ?>
-                                    <th>Tarih</th>
-                                    <th>Plaka</th>
-                                    <th>Madde</th>
-                                    <th>Adet</th>
-                                    <th>Tutar</th>
-                                    <th class="text-end">İşlemler</th>
+                                    <th style='white-space: nowrap;'>Personel</th>
+                                    <th style="white-space: nowrap;">Tarih</th>
+                                    <th style="white-space: nowrap;">Plaka</th>
+                                    <th style="white-space: nowrap;">Madde</th>
+                                    <th style="white-space: nowrap;">Adet</th>
+                                    <th style="white-space: nowrap;">Tutar</th>
+                                    <th class="text-end" style="white-space: nowrap;">İşlemler</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if ($kayitlar && $kayitlar->num_rows > 0): ?>
                                     <?php while($row = $kayitlar->fetch_assoc()): ?>
                                     <tr>
-                                        <?php if($rol == 'komiser') { 
+                                        <?php 
                                             $gosterilecek_isim = htmlspecialchars($row['kullanici_adi']);
                                             if (!empty($row['sicil_no'])) {
                                                 $gosterilecek_isim .= " (" . htmlspecialchars($row['sicil_no']) . ")";
                                             }
-                                            echo "<td><span class='badge' style='background: #cbd5e1; color: #1e293b;'>".$gosterilecek_isim."</span></td>"; 
-                                        } ?>
-                                        <td><span style="font-weight: 500;"><?= date("d.m.Y", strtotime($row['tarih'])) ?></span></td>
-                                        <td><span class="badge bg-warning text-dark border"><?= htmlspecialchars($row['plaka'] ?? '-') ?></span></td>
-                                        <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($row['madde_no']) ?></span></td>
+                                            echo "<td style='white-space: nowrap;'><span class='badge' style='background: #cbd5e1; color: #1e293b;'>".$gosterilecek_isim."</span></td>"; 
+                                        ?>
+                                        <td><span style="font-weight: 500; white-space: nowrap;"><?= date("d.m.Y", strtotime($row['tarih'])) ?></span></td>
+                                        <td><span class="badge bg-warning text-dark border" style="white-space: nowrap;"><?= htmlspecialchars($row['plaka'] ?? '-') ?></span></td>
+                                        <td><span class="badge bg-light text-dark border" style="white-space: nowrap;"><?= htmlspecialchars($row['madde_no']) ?></span></td>
                                         <td><?= htmlspecialchars($row['adet']) ?></td>
-                                        <td style="font-weight: 600; color: var(--primary);"><?= number_format($row['toplam_tutar'], 2, ',', '.') ?> ₺</td>
+                                        <td style="font-weight: 600; color: var(--primary); white-space: nowrap;"><?= number_format($row['toplam_tutar'], 2, ',', '.') ?> ₺</td>
                                         <td class="text-end">
-                                            <a href="duzenle.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-sm" style="background: #fbbf24; color: #78350f; border: none;">Düzenle</a>
-                                            <a href="sil.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-sm btn-danger ms-1" onclick="return confirm('Bu kaydı silmek istediğinize emin misiniz?')">Sil</a>
+                                            <div class="d-flex flex-column gap-1 float-end" style="width: 75px;">
+                                                <a href="duzenle.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-sm py-1 px-2" style="background: #fbbf24; color: #78350f; border: none; font-size: 0.75rem;">Düzenle</a>
+                                                <a href="sil.php?id=<?= htmlspecialchars($row['id']) ?>" class="btn btn-sm btn-danger py-1 px-2" onclick="return confirm('Bu kaydı silmek istediğinize emin misiniz?')" style="font-size: 0.75rem;">Sil</a>
+                                            </div>
                                         </td>
                                     </tr>
                                     <?php endwhile; ?>
