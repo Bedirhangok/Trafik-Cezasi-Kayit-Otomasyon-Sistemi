@@ -11,7 +11,7 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 $host      = "localhost";   // Veritabanı sunucu adresi
 $kullanici = "root";        // MySQL kullanıcı adı (hosting'de değişecek)
 $sifre     = "";            // MySQL şifresi   (hosting'de değişecek)
-$veritabani = "trafik_db"; // Veritabanı adı  (hosting'de değişecek)
+$veritabani = ""; // Veritabanı adı  (hosting'de değişecek)
 
 try {
     $db = new mysqli($host, $kullanici, $sifre, $veritabani);
