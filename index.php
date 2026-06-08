@@ -8,6 +8,12 @@ if (!isset($_SESSION['kullanici_id'])) {
     exit;
 }
 
+// Veritabanına plaka sütunu yoksa otomatik ekle
+$check_plaka = $db->query("SHOW COLUMNS FROM ceza_kayitlari LIKE 'plaka'");
+if ($check_plaka && $check_plaka->num_rows == 0) {
+    $db->query("ALTER TABLE ceza_kayitlari ADD COLUMN plaka VARCHAR(20) NULL AFTER madde_id");
+}
+
 $aktif_id = $_SESSION['kullanici_id'];
 $rol = $_SESSION['rol'];
 $mesaj = "";
@@ -15,21 +21,50 @@ $mesaj = "";
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tarih = $_POST['tarih'];
     $madde_ids = $_POST['madde_id'];
+    $manuel_maddeler = $_POST['manuel_madde_no'] ?? [];
+    $plakalar = $_POST['plaka'];
     $adetler = $_POST['adet'];
     $tutarlar = $_POST['toplam_tutar'];
 
-    $sql = "INSERT INTO ceza_kayitlari (kullanici_id, tarih, madde_id, adet, toplam_tutar) VALUES (?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO ceza_kayitlari (kullanici_id, tarih, madde_id, plaka, adet, toplam_tutar) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $db->prepare($sql);
     if ($stmt) {
         $basarili = 0;
         $hata = 0;
         for ($i = 0; $i < count($madde_ids); $i++) {
             $m_id = $madde_ids[$i];
+            
+            // Manuel madde girilmişse DB'de ara, yoksa yeni madde oluştur
+            if ($m_id === 'manuel') {
+                $manuel_madde = strtoupper(trim($manuel_maddeler[$i] ?? ''));
+                if (!empty($manuel_madde)) {
+                    $chk = $db->prepare("SELECT id FROM ceza_maddeleri WHERE madde_no = ?");
+                    $chk->bind_param("s", $manuel_madde);
+                    $chk->execute();
+                    $res = $chk->get_result();
+                    if ($r = $res->fetch_assoc()) {
+                        $m_id = $r['id'];
+                    } else {
+                        $aciklama = "Sistemden manuel eklendi";
+                        $ins = $db->prepare("INSERT INTO ceza_maddeleri (madde_no, aciklama) VALUES (?, ?)");
+                        $ins->bind_param("ss", $manuel_madde, $aciklama);
+                        $ins->execute();
+                        $m_id = $ins->insert_id;
+                        $ins->close();
+                    }
+                    $chk->close();
+                } else {
+                    $hata++;
+                    continue; // Manuel seçilip boş bırakıldıysa bu satırı atla
+                }
+            }
+            
+            $p = strtoupper(trim($plakalar[$i]));
             $a = $adetler[$i];
             $t = $tutarlar[$i];
             
-            if(!empty($m_id) && !empty($a) && !empty($t)) {
-                $stmt->bind_param("isiid", $aktif_id, $tarih, $m_id, $a, $t);
+            if(!empty($m_id) && !empty($a) && !empty($t) && !empty($p)) {
+                $stmt->bind_param("isisid", $aktif_id, $tarih, $m_id, $p, $a, $t);
                 if ($stmt->execute()) {
                     $basarili++;
                 } else {
@@ -53,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $maddeler = $db->query("SELECT * FROM ceza_maddeleri ORDER BY madde_no ASC");
 
 // VERİLERİ LİSTELE (READ İşlemi)
-$liste_sorgusu = "SELECT c.id, k.kullanici_adi, c.tarih, m.madde_no, c.adet, c.toplam_tutar 
+$liste_sorgusu = "SELECT c.id, k.kullanici_adi, k.sicil_no, c.tarih, c.plaka, m.madde_no, c.adet, c.toplam_tutar 
                   FROM ceza_kayitlari c 
                   JOIN ceza_maddeleri m ON c.madde_id = m.id 
                   JOIN kullanicilar k ON c.kullanici_id = k.id ";
@@ -78,7 +113,12 @@ $kayitlar = $db->query($liste_sorgusu);
     
     <div class="dash-header">
         <h5>Hoşgeldin, <?= htmlspecialchars($_SESSION['kullanici_adi']) ?> <span class="badge bg-primary ms-2"><?= htmlspecialchars(strtoupper($rol)) ?></span></h5>
-        <a href="cikis.php" class="btn btn-danger btn-sm px-3" style="border-radius: 8px;">Çıkış Yap</a>
+        <div>
+            <?php if($rol == 'admin'): ?>
+                <a href="kayit.php" class="btn btn-success btn-sm px-3 me-2" style="border-radius: 8px;">+ Personel Ekle</a>
+            <?php endif; ?>
+            <a href="cikis.php" class="btn btn-danger btn-sm px-3" style="border-radius: 8px;">Çıkış Yap</a>
+        </div>
     </div>
 
     <div class="row g-4">
@@ -100,7 +140,7 @@ $kayitlar = $db->query($liste_sorgusu);
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Ceza Maddesi</label>
-                                <select name="madde_id[]" class="form-select" required>
+                                <select name="madde_id[]" class="form-select madde-select" required>
                                     <option value="">Lütfen seçiniz...</option>
                                     <?php 
                                     // Yeniden kullanılabilir bir seçenekler string'i oluştur
@@ -112,7 +152,13 @@ $kayitlar = $db->query($liste_sorgusu);
                                     }
                                     echo $options; 
                                     ?>
+                                    <option value="manuel" style="font-weight:bold; color:var(--primary);">+ Diğer / Manuel Gir...</option>
                                 </select>
+                                <input type="text" name="manuel_madde_no[]" class="form-control mt-2 manuel-input" placeholder="Ceza maddesini yazın (Örn: 47/1-B)" style="display:none; text-transform:uppercase;">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Araç Plakası</label>
+                                <input type="text" name="plaka[]" class="form-control" required placeholder="Örn: 16 ABC 123" style="text-transform: uppercase;">
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -143,6 +189,7 @@ $kayitlar = $db->query($liste_sorgusu);
                                 <tr>
                                     <?php if($rol == 'komiser') echo "<th>Personel</th>"; ?>
                                     <th>Tarih</th>
+                                    <th>Plaka</th>
                                     <th>Madde</th>
                                     <th>Adet</th>
                                     <th>Tutar</th>
@@ -153,8 +200,15 @@ $kayitlar = $db->query($liste_sorgusu);
                                 <?php if ($kayitlar && $kayitlar->num_rows > 0): ?>
                                     <?php while($row = $kayitlar->fetch_assoc()): ?>
                                     <tr>
-                                        <?php if($rol == 'komiser') echo "<td><span class='badge' style='background: #cbd5e1; color: #1e293b;'>".htmlspecialchars($row['kullanici_adi'])."</span></td>"; ?>
+                                        <?php if($rol == 'komiser') { 
+                                            $gosterilecek_isim = htmlspecialchars($row['kullanici_adi']);
+                                            if (!empty($row['sicil_no'])) {
+                                                $gosterilecek_isim .= " (" . htmlspecialchars($row['sicil_no']) . ")";
+                                            }
+                                            echo "<td><span class='badge' style='background: #cbd5e1; color: #1e293b;'>".$gosterilecek_isim."</span></td>"; 
+                                        } ?>
                                         <td><span style="font-weight: 500;"><?= date("d.m.Y", strtotime($row['tarih'])) ?></span></td>
+                                        <td><span class="badge bg-warning text-dark border"><?= htmlspecialchars($row['plaka'] ?? '-') ?></span></td>
                                         <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($row['madde_no']) ?></span></td>
                                         <td><?= htmlspecialchars($row['adet']) ?></td>
                                         <td style="font-weight: 600; color: var(--primary);"><?= number_format($row['toplam_tutar'], 2, ',', '.') ?> ₺</td>
@@ -185,6 +239,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // PHP'den maddeleri JS formatına aktar
     const secenekler = `<?= $options ?>`;
 
+    // Delegasyon ile manuel giriş kutusunu göster/gizle
+    container.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('madde-select')) {
+            const input = e.target.nextElementSibling;
+            if (e.target.value === 'manuel') {
+                input.style.display = 'block';
+                input.required = true;
+            } else {
+                input.style.display = 'none';
+                input.required = false;
+                input.value = '';
+            }
+        }
+    });
+
     satirEkleBtn.addEventListener('click', function() {
         satirSayisi++;
         const yeniSatir = document.createElement('div');
@@ -193,15 +262,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         yeniSatir.innerHTML = `
             <div class="mb-2 d-flex justify-content-between align-items-center">
-                <span class="badge bg-secondary">Ceza #\${satirSayisi}</span>
+                <span class="badge bg-secondary">Ceza #${satirSayisi}</span>
                 <button type="button" class="btn btn-sm btn-outline-danger satir-sil">Sil</button>
             </div>
             <div class="mb-3">
                 <label class="form-label">Ceza Maddesi</label>
-                <select name="madde_id[]" class="form-select" required>
+                <select name="madde_id[]" class="form-select madde-select" required>
                     <option value="">Lütfen seçiniz...</option>
-                    \${secenekler}
+                    ${secenekler}
+                    <option value="manuel" style="font-weight:bold; color:var(--primary);">+ Diğer / Manuel Gir...</option>
                 </select>
+                <input type="text" name="manuel_madde_no[]" class="form-control mt-2 manuel-input" placeholder="Ceza maddesini yazın (Örn: 47/1-B)" style="display:none; text-transform:uppercase;">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Araç Plakası</label>
+                <input type="text" name="plaka[]" class="form-control" required placeholder="Örn: 16 ABC 123" style="text-transform: uppercase;">
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">

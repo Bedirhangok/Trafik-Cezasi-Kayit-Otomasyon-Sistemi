@@ -66,9 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
         </form>
-        <div class="mt-4 text-center">
-            <a href="kayit.php" class="text-decoration-none text-muted" style="font-weight: 500;">Hesabınız yok mu? <span style="color: var(--primary);">Kayıt Ol</span></a>
-        </div>
     </div>
 </body>
 </html>

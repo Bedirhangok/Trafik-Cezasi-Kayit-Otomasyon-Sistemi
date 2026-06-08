@@ -36,13 +36,14 @@ if ($stmt) {
 // Form gönderildiğinde veriyi GÜNCELLE (UPDATE İşlemi)
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tarih = $_POST['tarih'];
+    $plaka = strtoupper(trim($_POST['plaka']));
     $adet = $_POST['adet'];
     $tutar = $_POST['toplam_tutar'];
 
-    $guncelle_sql = "UPDATE ceza_kayitlari SET tarih=?, adet=?, toplam_tutar=? WHERE id=?";
+    $guncelle_sql = "UPDATE ceza_kayitlari SET tarih=?, plaka=?, adet=?, toplam_tutar=? WHERE id=?";
     $g_stmt = $db->prepare($guncelle_sql);
     if ($g_stmt) {
-        $g_stmt->bind_param("sidi", $tarih, $adet, $tutar, $id);
+        $g_stmt->bind_param("ssidi", $tarih, $plaka, $adet, $tutar, $id);
         
         if ($g_stmt->execute()) {
             header("Location: index.php");
@@ -70,6 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="mb-3">
                 <label class="form-label">İşlem Tarihi</label>
                 <input type="date" name="tarih" class="form-control" value="<?= htmlspecialchars($mevcut_veri['tarih']) ?>" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Araç Plakası</label>
+                <input type="text" name="plaka" class="form-control" value="<?= htmlspecialchars($mevcut_veri['plaka'] ?? '') ?>" required style="text-transform: uppercase;">
             </div>
             <div class="mb-3">
                 <label class="form-label">Ceza Adedi</label>
