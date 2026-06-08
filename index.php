@@ -87,6 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 // Form için ceza maddelerini çek
 $maddeler = $db->query("SELECT * FROM ceza_maddeleri ORDER BY madde_no ASC");
 
+// Admin için onay bekleyen kullanıcıları çek
+$bekleyen_kullanicilar = null;
+if ($rol == 'admin') {
+    $bekleyen_sorgu = "SELECT id, kullanici_adi, sicil_no, rol FROM kullanicilar WHERE is_approved = 0 ORDER BY id DESC";
+    $bekleyen_kullanicilar = $db->query($bekleyen_sorgu);
+}
+
 // VERİLERİ LİSTELE (READ İşlemi)
 $liste_sorgusu = "SELECT c.id, k.kullanici_adi, k.sicil_no, c.tarih, c.plaka, m.madde_no, c.adet, c.toplam_tutar 
                   FROM ceza_kayitlari c 
@@ -120,6 +127,37 @@ $kayitlar = $db->query($liste_sorgusu);
             <a href="cikis.php" class="btn btn-danger btn-sm px-3" style="border-radius: 8px;">Çıkış Yap</a>
         </div>
     </div>
+
+    <?php if ($rol == 'admin' && $bekleyen_kullanicilar && $bekleyen_kullanicilar->num_rows > 0): ?>
+    <div class="alert alert-warning mb-4 shadow-sm border-warning" style="background-color: rgba(255, 243, 205, 0.9);">
+        <h5 class="mb-3" style="color: #856404;">📋 Onay Bekleyen Kullanıcılar</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle" style="background: transparent;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #ffeeba;">
+                        <th style="color: #856404;">Kullanıcı Adı</th>
+                        <th style="color: #856404;">Sicil No</th>
+                        <th style="color: #856404;">Rol</th>
+                        <th class="text-end" style="color: #856404;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while($bekleyen = $bekleyen_kullanicilar->fetch_assoc()): ?>
+                    <tr style="border-bottom: 1px solid #ffeeba;">
+                        <td><strong><?= htmlspecialchars($bekleyen['kullanici_adi']) ?></strong></td>
+                        <td><?= htmlspecialchars($bekleyen['sicil_no']) ?></td>
+                        <td><span class="badge bg-secondary"><?= strtoupper($bekleyen['rol']) ?></span></td>
+                        <td class="text-end">
+                            <a href="kullanici_islem.php?id=<?= $bekleyen['id'] ?>&islem=onayla" class="btn btn-success btn-sm px-3" onclick="return confirm('Kullanıcıyı onaylamak istediğinize emin misiniz?')">Onayla</a>
+                            <a href="kullanici_islem.php?id=<?= $bekleyen['id'] ?>&islem=reddet" class="btn btn-danger btn-sm px-3 ms-1" onclick="return confirm('Kullanıcıyı reddedip silmek istediğinize emin misiniz?')">Reddet</a>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="row g-4">
         <div class="col-lg-4">

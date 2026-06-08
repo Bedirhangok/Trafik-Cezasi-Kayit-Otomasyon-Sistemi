@@ -3,12 +3,20 @@ session_start();
 require_once 'baglanti.php';
 $mesaj = "";
 
+// Veritabanına is_approved sütunu yoksa otomatik ekle
+$check_col_app = $db->query("SHOW COLUMNS FROM kullanicilar LIKE 'is_approved'");
+if ($check_col_app && $check_col_app->num_rows == 0) {
+    $db->query("ALTER TABLE kullanicilar ADD COLUMN is_approved TINYINT(1) DEFAULT 0 AFTER rol");
+    // Mevcut kullanıcıları onaylı yap (sisteme girebilmeleri için)
+    $db->query("UPDATE kullanicilar SET is_approved = 1");
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $kullanici_adi = trim($_POST['kullanici_adi']);
     $sifre = trim($_POST['sifre']);
 
     if (!empty($kullanici_adi) && !empty($sifre)) {
-        $sql = "SELECT id, kullanici_adi, sifre, rol FROM kullanicilar WHERE kullanici_adi = ?";
+        $sql = "SELECT id, kullanici_adi, sifre, rol, is_approved FROM kullanicilar WHERE kullanici_adi = ?";
         $stmt = $db->prepare($sql);
         
         if ($stmt) {
@@ -21,15 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 // Kural: Hashlenmiş şifreyi doğrula
                 if (password_verify($sifre, $kullanici['sifre'])) {
-                    // Güvenlik: Session Fixation koruması
-                    session_regenerate_id(true);
-                    
-                    // Kural: Session oluştur
-                    $_SESSION['kullanici_id'] = $kullanici['id'];
-                    $_SESSION['kullanici_adi'] = $kullanici['kullanici_adi'];
-                    $_SESSION['rol'] = $kullanici['rol'];
-                    header("Location: index.php");
-                    exit;
+                    // Onay kontrolü
+                    if (isset($kullanici['is_approved']) && $kullanici['is_approved'] == 0) {
+                        $mesaj = "<div class='alert alert-warning'>Hesabınız henüz onaylanmadı. Lütfen yöneticinin onaylamasını bekleyin.</div>";
+                    } else {
+                        // Güvenlik: Session Fixation koruması
+                        session_regenerate_id(true);
+                        
+                        // Kural: Session oluştur
+                        $_SESSION['kullanici_id'] = $kullanici['id'];
+                        $_SESSION['kullanici_adi'] = $kullanici['kullanici_adi'];
+                        $_SESSION['rol'] = $kullanici['rol'];
+                        header("Location: index.php");
+                        exit;
+                    }
                 } else {
                     $mesaj = "<div class='alert alert-danger'>Hatalı şifre girdiniz.</div>";
                 }
@@ -64,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <label class="form-label">Şifre</label>
                 <input type="password" name="sifre" class="form-control" required placeholder="Şifrenizi girin">
             </div>
-            <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+            <button type="submit" class="btn btn-primary w-100 mb-2">Giriş Yap</button>
+            <a href="kayit.php" class="btn btn-outline-secondary w-100">Kayıt Ol</a>
         </form>
     </div>
 </body>

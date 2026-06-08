@@ -2,16 +2,18 @@
 session_start();
 require_once 'baglanti.php';
 
-// Güvenlik: Sadece adminler girebilir
-if (!isset($_SESSION['kullanici_id']) || $_SESSION['rol'] !== 'admin') {
-    header("Location: index.php");
-    exit;
-}
-
 // Veritabanına sicil_no sütunu yoksa otomatik ekle
 $check_col = $db->query("SHOW COLUMNS FROM kullanicilar LIKE 'sicil_no'");
 if ($check_col && $check_col->num_rows == 0) {
     $db->query("ALTER TABLE kullanicilar ADD COLUMN sicil_no VARCHAR(50) NULL AFTER kullanici_adi");
+}
+
+// Veritabanına is_approved sütunu yoksa otomatik ekle
+$check_col_app = $db->query("SHOW COLUMNS FROM kullanicilar LIKE 'is_approved'");
+if ($check_col_app && $check_col_app->num_rows == 0) {
+    $db->query("ALTER TABLE kullanicilar ADD COLUMN is_approved TINYINT(1) DEFAULT 0 AFTER rol");
+    // Mevcut kullanıcıları onaylı yap (sisteme girebilmeleri için)
+    $db->query("UPDATE kullanicilar SET is_approved = 1");
 }
 
 $mesaj = "";
@@ -38,14 +40,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Kural: Şifreyi Hashle
             $hashli_sifre = password_hash($sifre, PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO kullanicilar (kullanici_adi, sicil_no, sifre, rol) VALUES (?, ?, ?, ?)";
+            // Eğer admin ekliyorsa otomatik onaylı olsun, dışarıdan kayıt olunuyorsa onaysız (0) olsun
+            $is_approved = 0;
+            if (isset($_SESSION['kullanici_id']) && $_SESSION['rol'] === 'admin') {
+                $is_approved = 1;
+            }
+
+            $sql = "INSERT INTO kullanicilar (kullanici_adi, sicil_no, sifre, rol, is_approved) VALUES (?, ?, ?, ?, ?)";
             $stmt = $db->prepare($sql);
         
         if ($stmt) {
-            $stmt->bind_param("ssss", $kullanici_adi, $sicil_no, $hashli_sifre, $rol);
+            $stmt->bind_param("ssssi", $kullanici_adi, $sicil_no, $hashli_sifre, $rol, $is_approved);
             
             if ($stmt->execute()) {
-                $mesaj = "<div class='alert alert-success'>Personel başarıyla kaydedildi!</div>";
+                if ($is_approved == 1) {
+                    $mesaj = "<div class='alert alert-success'>Personel başarıyla kaydedildi!</div>";
+                } else {
+                    $mesaj = "<div class='alert alert-success'>Kayıt başarılı! Sistem yöneticisi onayından sonra giriş yapabileceksiniz.</div>";
+                }
             } else {
                 $mesaj = "<div class='alert alert-danger'>Hata: Bu kullanıcı adı zaten alınmış olabilir veya sistemsel bir sorun var.</div>";
             }
