@@ -168,6 +168,9 @@ kullanicilar (1) ──────< ceza_kayitlari >────── (1) ceza
 **Giriş Sayfası**
 
 ![Giriş Sayfası](images/Giris_paneli.png)
+
+**Giriş Sayfası**
+
 ![Kayıt Sayfası](images/Kayit_paneli.png)
 
 **Admin Panel**
