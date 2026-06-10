@@ -1,17 +1,11 @@
 <?php
-/**
- * Veritabanı Bağlantı Dosyası
- * 
- * KURULUM: Aşağıdaki bilgileri kendi ortamınıza göre doldurun.
- * Canlı ortama (hosting) alırken bu değerleri güncelleyin.
- * Bu dosyayı asla Github'a hassas bilgilerle birlikte yüklemeyin!
- */
+
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 $host      = "localhost";   // Veritabanı sunucu adresi
-$kullanici = "root";        // MySQL kullanıcı adı (hosting'de değişecek)
-$sifre     = "";            // MySQL şifresi   (hosting'de değişecek)
-$veritabani = "trafik_db"; // Veritabanı adı  (hosting'de değişecek)
+$kullanici = "root";        // MySQL kullanıcı adı 
+$sifre     = "";            // MySQL şifresi  
+$veritabani = "trafik_db"; // Veritabanı adı 
 
 try {
     $db = new mysqli($host, $kullanici, $sifre, $veritabani);
