@@ -189,7 +189,7 @@ kullanicilar (1) ──────< ceza_kayitlari >────── (1) ceza
 
 ### 🎬 Tanıtım Videosu
 
-📹 [YouTube Linki](https://www.youtube.com/watch?v=uWXfkNyfpaE&t=541s)
+📹 [YouTube Linki](https://youtu.be/MNlFMaxdGkU)
 
 ---
 
