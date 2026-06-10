@@ -167,21 +167,21 @@ kullanicilar (1) ──────< ceza_kayitlari >────── (1) ceza
 
 **Giriş Sayfası**
 
-![Giriş Sayfası](images\Giris_paneli.png)
-![Kayıt Sayfası](images\Kayit_paneli.png)
+![Giriş Sayfası](images/Giris_paneli.png)
+![Kayıt Sayfası](images/Kayit_paneli.png)
 
 **Admin Panel**
-![Admin Panel](images\admin_panel.png)
+![Admin Panel](images/admin_panel.png)
 
 **Komiser Panel**
-![Komiser Panel](images\komiser_panel.png)
+![Komiser Panel](images/komiser_panel.png)
 
 **Polis Panel**
-![Panel Panel](images\polis_panel.png)
+![Panel Panel](images/polis_panel.png)
 
 **Ceza Giriş Formu**
 
-![Ceza Girisi](images\Ceza_girisi.png)
+![Ceza Girisi](images/Ceza_girisi.png)
 
 ---
 
