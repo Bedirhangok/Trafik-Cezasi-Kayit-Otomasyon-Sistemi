@@ -174,10 +174,10 @@ kullanicilar (1) ──────< ceza_kayitlari >────── (1) ceza
 ![Admin Panel](images\admin_panel.png)
 
 **Komiser Panel**
-![Komiser Panel](screenshots/login.png)
+![Komiser Panel](images\komiser_panel.png)
 
 **Polis Panel**
-![Panel Panel](images\komiser_panel.png)
+![Panel Panel](images\polis_panel.png)
 
 **Ceza Giriş Formu**
 
